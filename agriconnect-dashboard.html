@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgriConnect — Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAFAF3;
+    --panel: #FFFFFF;
+    --forest: #1F3D2B;
+    --forest-deep: #12281C;
+    --forest-soft: #EAF1E7;
+    --gold: #C79A3E;
+    --gold-dark: #A87B26;
+    --gold-soft: #F7EFDB;
+    --sky: #2C6E8C;
+    --sky-soft: #E4F0F4;
+    --risk: #B4432C;
+    --risk-soft: #F7E2DA;
+    --ink: #1B1B16;
+    --ink-soft: #63665A;
+    --ink-faint: #9A9C8E;
+    --line: #E4E0D1;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 { font-family: "Space Grotesk", sans-serif; color: var(--forest-deep); margin: 0; }
+  .mono { font-family: "IBM Plex Mono", monospace; }
+
+  a { color: inherit; }
+
+  /* ============ SHELL ============ */
+
+  .shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+
+  .rail {
+    background: var(--forest-deep);
+    color: var(--cream);
+    padding: 26px 18px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rail-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: var(--gold-soft);
+    padding: 0 6px 22px 6px;
+    border-bottom: 1px solid #2C4433;
+    margin-bottom: 18px;
+    font-size: 1.02rem;
+  }
+
+  .rail-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .rail-label { font-size: 0.68rem; letter-spacing: 0.06em; color: #7C8A76; padding: 16px 10px 6px; }
+  .rail-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px;
+    font-size: 0.87rem; color: #C9CDBF; text-decoration: none;
+  }
+  .rail-item.active { background: var(--gold); color: var(--forest-deep); font-weight: 600; }
+  .rail-item:not(.active):hover { background: #1B3323; }
+  .rail-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; flex-shrink: 0; }
+
+  .rail-foot {
+    border-top: 1px solid #2C4433;
+    padding-top: 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.82rem; color: #9CA396;
+  }
+  .rail-foot-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--gold); color: var(--forest-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.78rem; flex-shrink: 0;
+  }
+
+  .main { min-width: 0; }
+
+  /* ============ TOPBAR ============ */
+
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 34px; background: var(--panel); border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .topbar-eyebrow { font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 3px; }
+  .topbar h1 { font-size: 1.4rem; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+  .range-tabs { display: flex; background: var(--forest-soft); border-radius: 8px; padding: 3px; }
+  .range-tab {
+    border: none; background: none; padding: 7px 14px; border-radius: 6px;
+    font-size: 0.82rem; color: var(--ink-soft); cursor: pointer;
+  }
+  .range-tab.active { background: var(--panel); color: var(--forest-deep); font-weight: 600; box-shadow: 0 1px 2px rgba(18,40,28,0.12); }
+
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--panel); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+
+  /* ============ CONTENT ============ */
+
+  .content { padding: 28px 34px 60px; }
+
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 22px;
+  }
+
+  .kpi {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px 18px 16px; position: relative; overflow: hidden;
+  }
+  .kpi::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent, var(--forest));
+  }
+  .kpi-label { font-size: 0.76rem; color: var(--ink-soft); margin-bottom: 10px; }
+  .kpi-value { font-family: "Space Grotesk", sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--forest-deep); line-height: 1; }
+  .kpi-unit { font-size: 0.72rem; color: var(--ink-faint); font-weight: 400; margin-left: 2px; }
+  .kpi-delta { font-size: 0.78rem; margin-top: 9px; display: flex; align-items: center; gap: 5px; }
+  .kpi-delta.pos { color: var(--forest); }
+  .kpi-delta.neg { color: var(--risk); }
+  .kpi-delta.flat { color: var(--ink-faint); }
+
+  .kpi.k-gold { --accent: var(--gold-dark); }
+  .kpi.k-sky { --accent: var(--sky); }
+  .kpi.k-risk { --accent: var(--risk); }
+
+  .grid {
+    display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; margin-bottom: 18px;
+  }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-b { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 22px 24px;
+  }
+  .panel-tinted { background: var(--forest-soft); border-color: #D7E3C9; }
+
+  .panel-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 12px; flex-wrap: wrap; }
+  .panel-sub { font-size: 0.83rem; color: var(--ink-soft); margin-top: 4px; line-height: 1.5; }
+  .panel-legend { display: flex; gap: 16px; font-size: 0.78rem; color: var(--ink-soft); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .chart-wrap { margin-top: 18px; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .axis-label { font-size: 9.5px; fill: var(--ink-faint); font-family: "IBM Plex Mono", monospace; }
+  .grid-line { stroke: var(--line); stroke-width: 1; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-top: 14px; }
+  thead th {
+    text-align: left; font-weight: 500; color: var(--ink-soft); font-size: 0.74rem;
+    letter-spacing: 0.03em; padding: 0 10px 10px 10px; border-bottom: 1px solid var(--line);
+  }
+  tbody td { padding: 11px 10px; border-bottom: 1px solid #F0EDDF; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .cell-strong { font-weight: 600; color: var(--forest-deep); }
+  .cell-muted { color: var(--ink-soft); }
+
+  .trend-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 600; }
+  .trend-chip.up { color: var(--forest); }
+  .trend-chip.down { color: var(--risk); }
+
+  .bar-track { width: 100%; height: 6px; background: var(--forest-soft); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); border-radius: 999px; }
+
+  .badge { font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; font-weight: 600; display: inline-block; }
+  .badge-verified { background: var(--sky-soft); color: var(--sky); }
+  .badge-pending { background: var(--gold-soft); color: var(--gold-dark); }
+  .badge-review { background: var(--risk-soft); color: var(--risk); }
+
+  /* Alerts feed */
+  .feed { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .feed-item { display: flex; gap: 12px; align-items: flex-start; }
+  .feed-mark { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .feed-mark.high { background: var(--risk); }
+  .feed-mark.med { background: var(--gold-dark); }
+  .feed-mark.low { background: var(--sky); }
+  .feed-title { font-size: 0.87rem; font-weight: 600; color: var(--forest-deep); margin-bottom: 2px; }
+  .feed-body { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.5; }
+  .feed-time { font-size: 0.72rem; color: var(--ink-faint); margin-top: 3px; }
+
+  /* Donut */
+  .donut-wrap { display: flex; align-items: center; gap: 22px; margin-top: 16px; }
+  .donut-stats { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .donut-stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+  .donut-stat-row .dot { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-soft); }
+  .donut-stat-row .swatch { width: 9px; height: 9px; border-radius: 3px; }
+  .donut-stat-row strong { color: var(--forest-deep); }
+
+  /* Pool list */
+  .pool-item { padding: 13px 0; border-bottom: 1px solid #F0EDDF; }
+  .pool-item:last-child { border-bottom: none; }
+  .pool-top { display: flex; justify-content: space-between; font-size: 0.86rem; margin-bottom: 7px; }
+  .pool-top .name { font-weight: 600; color: var(--forest-deep); }
+  .pool-top .qty { color: var(--ink-soft); }
+
+  .footer-note {
+    text-align: center; color: var(--ink-faint); font-size: 0.78rem; padding: 18px 0 6px;
+  }
+
+  @media (max-width: 1180px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .grid, .grid-b { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 760px) {
+    .shell { grid-template-columns: 1fr; }
+    .rail { display: none; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ RAIL ============ -->
+  <aside class="rail">
+    <div class="rail-brand">
+      <svg width="24" height="24" viewBox="0 0 34 34" fill="none"><path d="M17 2C10 6 5 8 5 8v9c0 9 6 13.5 12 15 6-1.5 12-6 12-15V8s-5-2-12-6Z" stroke="currentColor" stroke-width="2" fill="none"/><path d="M11 17l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>AgriConnect</span>
+    </div>
+    <nav class="rail-nav">
+      <div class="rail-label">Overview</div>
+      <a class="rail-item active"><span class="rail-dot"></span>Operations dashboard</a>
+      <div class="rail-label">Markets</div>
+      <a class="rail-item"><span class="rail-dot"></span>Price intelligence</a>
+      <a class="rail-item"><span class="rail-dot"></span>Risk &amp; shock alerts</a>
+      <div class="rail-label">Trade</div>
+      <a class="rail-item"><span class="rail-dot"></span>Demand matching</a>
+      <a class="rail-item"><span class="rail-dot"></span>FPO aggregation</a>
+      <a class="rail-item"><span class="rail-dot"></span>Trust &amp; grievances</a>
+      <div class="rail-label">Access</div>
+      <a class="rail-item"><span class="rail-dot"></span>Verification queue</a>
+    </nav>
+    <div class="rail-foot">
+      <div class="rail-foot-avatar">OP</div>
+      <div>Ops · Maharashtra region</div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <header class="topbar">
+      <div>
+        <div class="topbar-eyebrow">Wednesday, 9 September 2026</div>
+        <h1>Operations dashboard</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="range-tabs">
+          <button class="range-tab">7d</button>
+          <button class="range-tab active">30d</button>
+          <button class="range-tab">90d</button>
+        </div>
+        <button class="icon-btn" title="Export">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10 4.5 6.5M8 10l3.5-3.5M2 13.5h12" stroke="#1F3D2B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- KPI ROW -->
+      <section class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Gross trade value</div>
+          <div class="kpi-value">₹1.84<span class="kpi-unit">Cr</span></div>
+          <div class="kpi-delta pos">▲ 12.4% vs previous 30d</div>
+        </div>
+        <div class="kpi k-gold">
+          <div class="kpi-label">Trades completed</div>
+          <div class="kpi-value">2,318</div>
+          <div class="kpi-delta pos">▲ 8.1% vs previous 30d</div>
+        </div>
+        <div class="kpi k-sky">
+          <div class="kpi-label">Verified farmers / FPOs</div>
+          <div class="kpi-value">6,904</div>
+          <div class="kpi-delta pos">▲ 340 newly verified</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Verified buyers</div>
+          <div class="kpi-value">512</div>
+          <div class="kpi-delta flat">— steady vs previous 30d</div>
+        </div>
+        <div class="kpi k-risk">
+          <div class="kpi-label">Avg. platform trust score</div>
+          <div class="kpi-value">78<span class="kpi-unit">/100</span></div>
+          <div class="kpi-delta neg">▼ 1.2 pts — 6 grievances open</div>
+        </div>
+      </section>
+
+      <!-- PRICE TREND + ALERTS -->
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Mandi price trend — top tracked crops</h2>
+              <p class="panel-sub">Actuals for the last 30 days across all verified markets, indexed to ₹/quintal.</p>
+            </div>
+            <div class="panel-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#1F3D2B"></span>Onion</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#C79A3E"></span>Tomato</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#2C6E8C"></span>Wheat</span>
+            </div>
+          </div>
+          <div class="chart-wrap" id="price-trend-chart"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Market shock &amp; risk alerts</h2></div>
+          <p class="panel-sub">Live feed generated from arrivals, rainfall risk and demand signals.</p>
+          <div class="feed">
+            <div class="feed-item">
+              <span class="feed-mark high"></span>
+              <div>
+                <div class="feed-title">Rainfall risk — Nashik onion belt</div>
+                <div class="feed-body">Above-average rainfall forecast over the next 5 days may disrupt arrivals; price likely to firm up.</div>
+                <div class="feed-time">18 minutes ago</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-mark med"></span>
+              <div>
+                <div class="feed-title">Tomato arrivals rising — Pune APMC</div>
+                <div class="feed-body">Arrivals up 22% week-on-week, outpacing offtake. Softness expected through the week.</div>
+                <div class="feed-time">1 hour ago</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-mark low"></span>
+              <div>
+                <div class="feed-title">Wheat demand firming — Solapur</div>
+                <div class="feed-body">Two new institutional buyers posted standing demand for Grade A wheat.</div>
+                <div class="feed-time">3 hours ago</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-mark med"></span>
+              <div>
+                <div class="feed-title">Potato shelf-life window closing</div>
+                <div class="feed-body">14 active lots cross their recommended sell-by window in the next 48 hours.</div>
+                <div class="feed-time">5 hours ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MATCHING FUNNEL / TOP MARKETS / TRUST DONUT -->
+      <section class="grid-3">
+        <div class="panel">
+          <h2>Demand-first matching</h2>
+          <p class="panel-sub">Buyer demand posted vs. auto-matched to verified supply, last 30 days.</p>
+          <div class="chart-wrap" id="funnel-chart"></div>
+        </div>
+
+        <div class="panel">
+          <h2>FPO aggregation pools</h2>
+          <p class="panel-sub">Live pools building toward bulk-lot thresholds.</p>
+          <div>
+            <div class="pool-item">
+              <div class="pool-top"><span class="name">Onion — Lasalgaon cluster</span><span class="qty">4.6t / 5t</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:92%"></div></div>
+            </div>
+            <div class="pool-item">
+              <div class="pool-top"><span class="name">Tomato — Pune cluster</span><span class="qty">2.1t / 5t</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:42%"></div></div>
+            </div>
+            <div class="pool-item">
+              <div class="pool-top"><span class="name">Soybean — Solapur cluster</span><span class="qty">5t / 5t</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+            </div>
+            <div class="pool-item">
+              <div class="pool-top"><span class="name">Wheat — Ahmednagar cluster</span><span class="qty">1.3t / 5t</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:26%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Trust score distribution</h2>
+          <p class="panel-sub">Across all 7,416 verified accounts.</p>
+          <div class="donut-wrap">
+            <svg width="128" height="128" viewBox="0 0 128 128">
+              <circle cx="64" cy="64" r="50" fill="none" stroke="#EAF1E7" stroke-width="16"/>
+              <circle cx="64" cy="64" r="50" fill="none" stroke="#1F3D2B" stroke-width="16"
+                stroke-dasharray="204 314" stroke-dashoffset="0" transform="rotate(-90 64 64)" stroke-linecap="round"/>
+              <circle cx="64" cy="64" r="50" fill="none" stroke="#C79A3E" stroke-width="16"
+                stroke-dasharray="79 314" stroke-dashoffset="-204" transform="rotate(-90 64 64)" stroke-linecap="round"/>
+              <circle cx="64" cy="64" r="50" fill="none" stroke="#B4432C" stroke-width="16"
+                stroke-dasharray="31 314" stroke-dashoffset="-283" transform="rotate(-90 64 64)" stroke-linecap="round"/>
+              <text x="64" y="60" text-anchor="middle" font-family="Space Grotesk" font-size="22" font-weight="700" fill="#12281C">78</text>
+              <text x="64" y="76" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#63665A">avg score</text>
+            </svg>
+            <div class="donut-stats">
+              <div class="donut-stat-row"><span class="dot"><span class="swatch" style="background:#1F3D2B"></span>Trusted (80–100)</span><strong>65%</strong></div>
+              <div class="donut-stat-row"><span class="dot"><span class="swatch" style="background:#C79A3E"></span>Building (50–79)</span><strong>25%</strong></div>
+              <div class="donut-stat-row"><span class="dot"><span class="swatch" style="background:#B4432C"></span>Under review (&lt;50)</span><strong>10%</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOP MARKETS + GRIEVANCES -->
+      <section class="grid-b">
+        <div class="panel">
+          <div class="panel-head"><h2>Top markets by volume</h2></div>
+          <table>
+            <thead><tr><th>Mandi</th><th>Crop mix</th><th>Arrivals (t)</th><th>Avg. price</th><th>Trend</th></tr></thead>
+            <tbody>
+              <tr><td class="cell-strong">Lasalgaon Mandi</td><td class="cell-muted">Onion, Wheat</td><td>842</td><td>₹1,910</td><td><span class="trend-chip up">▲ 4.2%</span></td></tr>
+              <tr><td class="cell-strong">Pune APMC</td><td class="cell-muted">Tomato, Potato</td><td>611</td><td>₹1,180</td><td><span class="trend-chip down">▼ 2.8%</span></td></tr>
+              <tr><td class="cell-strong">Solapur Mandi</td><td class="cell-muted">Soybean, Wheat</td><td>488</td><td>₹4,260</td><td><span class="trend-chip up">▲ 1.1%</span></td></tr>
+              <tr><td class="cell-strong">Ahmednagar Mandi</td><td class="cell-muted">Onion, Soybean</td><td>355</td><td>₹1,875</td><td><span class="trend-chip up">▲ 3.6%</span></td></tr>
+              <tr><td class="cell-strong">Nashik Central Mandi</td><td class="cell-muted">Onion, Tomato</td><td>297</td><td>₹1,865</td><td><span class="trend-chip down">▼ 0.9%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Open grievances</h2></div>
+          <table>
+            <thead><tr><th>Reference</th><th>Issue</th><th>Trade value</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="cell-strong mono">AC-10234</td><td class="cell-muted">Quality mismatch</td><td>₹18,400</td><td><span class="badge badge-review">Under review</span></td></tr>
+              <tr><td class="cell-strong mono">AC-10198</td><td class="cell-muted">Delayed payment</td><td>₹9,750</td><td><span class="badge badge-pending">Awaiting response</span></td></tr>
+              <tr><td class="cell-strong mono">AC-10176</td><td class="cell-muted">Short delivery</td><td>₹24,100</td><td><span class="badge badge-review">Under review</span></td></tr>
+              <tr><td class="cell-strong mono">AC-10122</td><td class="cell-muted">Quality mismatch</td><td>₹6,300</td><td><span class="badge badge-verified">Resolved</span></td></tr>
+              <tr><td class="cell-strong mono">AC-10087</td><td class="cell-muted">Delayed payment</td><td>₹14,900</td><td><span class="badge badge-verified">Resolved</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="footer-note">AgriConnect Operations Dashboard — mock data for demonstration purposes</div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ---- Price trend chart (three crop lines, pure SVG, no dependencies) ----
+  function seededRandom(seed) {
+    return function () {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+  }
+  function series(base, vol, seed, n = 30) {
+    const rand = seededRandom(seed);
+    let v = base;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      v = v * 0.97 + (base + Math.sin(i / 6) * vol * 0.5) * 0.03 + (rand() - 0.5) * vol * 0.2;
+      out.push(v);
+    }
+    return out;
+  }
+  function buildPriceTrend() {
+    const w = 640, h = 230, pad = 8;
+    const on = series(1900, 220, 11), to = series(1180, 260, 42), wh = series(2350, 60, 87);
+    const all = [...on, ...to, ...wh];
+    const min = Math.min(...all) * 0.95, max = Math.max(...all) * 1.05;
+    const n = on.length;
+    const stepX = (w - pad * 2) / (n - 1);
+    const yOf = v => h - ((v - min) / (max - min)) * h;
+    const pathOf = arr => "M" + arr.map((v, i) => `${pad + i * stepX},${yOf(v).toFixed(1)}`).join(" L");
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f =>
+      `<line class="grid-line" x1="0" x2="${w}" y1="${(h * f).toFixed(1)}" y2="${(h * f).toFixed(1)}"/>`
+    ).join("");
+    const months = ["Aug 10", "Aug 20", "Aug 30", "Sep 9"];
+    const labels = months.map((m, i) =>
+      `<text class="axis-label" x="${(i / (months.length - 1)) * w}" y="${h + 18}">${m}</text>`
+    ).join("");
+    return `<svg class="chart" viewBox="0 0 ${w} ${h + 24}">
+      ${gridLines}
+      <path d="${pathOf(on)}" fill="none" stroke="#1F3D2B" stroke-width="2.5"/>
+      <path d="${pathOf(to)}" fill="none" stroke="#C79A3E" stroke-width="2.5"/>
+      <path d="${pathOf(wh)}" fill="none" stroke="#2C6E8C" stroke-width="2.5"/>
+      ${labels}
+    </svg>`;
+  }
+  document.getElementById("price-trend-chart").innerHTML = buildPriceTrend();
+
+  // ---- Demand-matching funnel ----
+  function buildFunnel() {
+    const stages = [
+      { label: "Demand posted", value: 1840 },
+      { label: "Auto-matched", value: 1512 },
+      { label: "Trade proposed", value: 1120 },
+      { label: "Completed via UPI", value: 934 },
+    ];
+    const w = 320, barH = 34, gap = 18;
+    const max = stages[0].value;
+    const rows = stages.map((s, i) => {
+      const y = i * (barH + gap);
+      const bw = (s.value / max) * w;
+      const color = ["#1F3D2B", "#3E6B4D", "#C79A3E", "#A87B26"][i];
+      return `<g transform="translate(0,${y})">
+        <rect x="0" y="0" width="${w}" height="${barH}" rx="7" fill="#EAF1E7"/>
+        <rect x="0" y="0" width="${bw}" height="${barH}" rx="7" fill="${color}"/>
+        <text x="12" y="${barH / 2 + 4}" font-family="IBM Plex Sans" font-size="12" font-weight="600" fill="#FAFAF3">${s.label}</text>
+        <text x="${w - 10}" y="${barH / 2 + 4}" text-anchor="end" font-family="Space Grotesk" font-size="13" font-weight="700" fill="${i < 2 ? '#FAFAF3' : '#12281C'}">${s.value.toLocaleString('en-IN')}</text>
+      </g>`;
+    }).join("");
+    return `<svg class="chart" viewBox="0 0 ${w} ${stages.length * (barH + gap) - gap}">${rows}</svg>`;
+  }
+  document.getElementById("funnel-chart").innerHTML = buildFunnel();
+
+  // Range tab interactivity (visual only — static mock data)
+  document.querySelectorAll(".range-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".range-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+</script>
+
+</body>
+</html>
